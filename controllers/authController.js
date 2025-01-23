@@ -22,14 +22,20 @@ async function getUsers(req, res) {
 async function createUser(req, res) {
     try {
         const db = req.app.locals.db;
+        console.log("db", db)
         const newUser = req.body;
 
         if (db.collection) {
+            console.log("testttt")
             await db.collection('users').insertOne(newUser);  // MongoDB
         } else if (db.query) {
             await db.query('INSERT INTO users (name, email) VALUES ($1, $2)', [newUser.name, newUser.email]);  // PostgreSQL
+            console.log("testttt postgrs")
+
         } else {
             await db.firestore().collection('users').add(newUser);  // Firebase
+            console.log("testttt fire")
+
         }
 
         res.status(201).json({ message: 'User created successfully' });
