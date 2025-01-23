@@ -5,18 +5,18 @@ const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
-// Connect to database
-connectDB();
-
 // Middleware
-app.use(express.json());  // To parse JSON request bodies
+app.use(express.json()); // To parse JSON request bodies
+
+// Connect to database (pass `app` instance)
+connectDB(app);
+
+// Routes
 app.use('/api/auth', authRoutes);
 
-// Error handling middleware
-
+// Start server
 app.listen(config.PORT, () => {
   console.log(`Server running on port ${config.PORT}`);
 });
-
 
 module.exports = app;

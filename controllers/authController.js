@@ -1,16 +1,31 @@
+
 async function getUsers(req, res) {
     try {
         const db = req.app.locals.db;
         let users;
+        const dbType = req.app.locals.dbType; // Get database type (firebase, mongodb, etc.)
+        console.log("DB TYPE", dbType)
 
-        if (db.collection) {
-            users = await db.collection('users').find().toArray();  // MongoDB
-        } else if (db.query) {
-            const result = await db.query('SELECT * FROM users');  // PostgreSQL
+        if (dbType === 'mongodb') {
+            // MongoDB logic
+            users = await db.collection('users').find().toArray();
+        } 
+        else if (dbType === 'mysql') {
+            // MySQL logic
+            const result = await db.query('SELECT * FROM users');
             users = result.rows;
-        } else {
-            const snapshot = await db.firestore().collection('users').get();  // Firebase
+        } 
+        else if (dbType === 'supabase') {
+            // Supabase logic (PostgreSQL)
+            const result = await db.query('SELECT * FROM users');
+            users = result.rows;
+        }
+        else if (dbType === 'firebase') {
+            const snapshot = await db.collection('users').get();
             users = snapshot.docs.map(doc => doc.data());
+        }
+        else {
+            throw new Error('Unsupported database type');
         }
 
         res.status(200).json(users);
@@ -19,92 +34,141 @@ async function getUsers(req, res) {
     }
 }
 
-async function createUser(req, res) {
+
+const createUser = async (req, res) => {
+    const db = req.app.locals.db; // Get database instance
+    const dbType = req.app.locals.dbType; // Get database type (firebase, mongodb, etc.)
+  
     try {
-        const db = req.app.locals.db;
-        console.log("db", db)
-        const newUser = req.body;
-
-        if (db.collection) {
-            console.log("testttt")
-            await db.collection('users').insertOne(newUser);  // MongoDB
-        } else if (db.query) {
-            await db.query('INSERT INTO users (name, email) VALUES ($1, $2)', [newUser.name, newUser.email]);  // PostgreSQL
-            console.log("testttt postgrs")
-
-        } else {
-            await db.firestore().collection('users').add(newUser);  // Firebase
-            console.log("testttt fire")
-
-        }
-
-        res.status(201).json({ message: 'User created successfully' });
+      if (dbType === 'firebase') {
+        // Firebase-specific logic (using Firestore)
+        const userRef = db.collection('users').doc(); // Firestore example
+        await userRef.set(req.body); // Set user data
+        res.status(200).json({ message: 'User created successfully' });
+      } else if (dbType === 'mongodb') {
+        // MongoDB logic
+        // Insert into MongoDB collection, for example
+        const newUser = new User(req.body);
+        await newUser.save();
+        res.status(200).json({ message: 'User created successfully' });
+      } else if (dbType === 'mysql') {
+        // MySQL logic
+        const [rows] = await db.promise().query('INSERT INTO users SET ?', req.body);
+        res.status(200).json({ message: 'User created successfully' });
+      } else if (dbType === 'supabase') {
+        // Supabase logic (PostgreSQL)
+        const { data, error } = await db
+          .from('users')
+          .insert([req.body]);
+  
+        if (error) throw new Error(error.message);
+  
+        res.status(200).json({ message: 'User created successfully', data });
+      } else {
+        throw new Error('Unsupported database type');
+      }
     } catch (error) {
-        res.status(500).json({ message: 'Error creating user', error: error.message });
+      console.error('Error creating user:', error);
+      res.status(500).json({ message: 'Error creating user', error: error.message });
     }
-}
+  };
+  
+
+
+
 
 async function getUserById(req, res) {
     try {
         const db = req.app.locals.db;
+        const dbType = req.app.locals.dbType; // Get database type (firebase, mongodb, etc.)
         const userId = req.params.id;
         let user;
 
-        if (db.collection) {
-            user = await db.collection('users').findOne({ _id: new db.ObjectId(userId) });  // MongoDB
-        } else if (db.query) {
-            const result = await db.query('SELECT * FROM users WHERE id = $1', [userId]);  // PostgreSQL
+        // MongoDB logic
+        if (dbType === 'mongodb') {
+            user = await db.collection('users').findOne({ _id: new db.ObjectId(userId) });
+        } 
+        // PostgreSQL logic
+        else if (dbType === 'mysql' || dbType === 'supabase') {
+            const result = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
             user = result.rows[0];
-        } else {
-            const doc = await db.firestore().collection('users').doc(userId).get();  // Firebase
-            user = doc.data();
+        } 
+        // Firebase Firestore logic
+        else if (dbType === 'firebase') {
+            const doc = await db.collection('users').doc(userId).get();
+            if (doc.exists) {
+                user = doc.data();
+            }
         }
 
+        // If user not found, return 404
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
+        // Return the user data
         res.status(200).json(user);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching user', error: error.message });
     }
 }
 
+
 async function updateUser(req, res) {
     try {
         const db = req.app.locals.db;
+        const dbType = req.app.locals.dbType; // Get database type (firebase, mongodb, etc.)
         const userId = req.params.id;
         const updatedData = req.body;
 
-        if (db.collection) {
-            await db.collection('users').updateOne({ _id: new db.ObjectId(userId) }, { $set: updatedData });  // MongoDB
-        } else if (db.query) {
-            await db.query('UPDATE users SET name = $1, email = $2 WHERE id = $3', [updatedData.name, updatedData.email, userId]);  // PostgreSQL
+        // MongoDB logic
+        if (dbType === 'mongodb') {
+            await db.collection('users').updateOne({ _id: new db.ObjectId(userId) }, { $set: updatedData });
+        } 
+        // PostgreSQL logic (Supabase uses PostgreSQL)
+        else if (dbType === 'mysql' || dbType === 'supabase') {
+            await db.query('UPDATE users SET name = $1, email = $2 WHERE id = $3', [updatedData.name, updatedData.email, userId]);
+        } 
+        // Firebase Firestore logic
+        else if (dbType === 'firebase') {
+            await db.collection('users').doc(userId).update(updatedData);
         } else {
-            await db.firestore().collection('users').doc(userId).update(updatedData);  // Firebase
+            throw new Error('Unsupported database type');
         }
 
         res.status(200).json({ message: 'User updated successfully' });
     } catch (error) {
+        console.error('Error updating user:', error);
         res.status(500).json({ message: 'Error updating user', error: error.message });
     }
 }
 
+
+
 async function deleteUser(req, res) {
     try {
         const db = req.app.locals.db;
+        const dbType = req.app.locals.dbType; // Get database type (firebase, mongodb, etc.)
         const userId = req.params.id;
 
-        if (db.collection) {
-            await db.collection('users').deleteOne({ _id: new db.ObjectId(userId) });  // MongoDB
-        } else if (db.query) {
-            await db.query('DELETE FROM users WHERE id = $1', [userId]);  // PostgreSQL
+        // MongoDB delete logic
+        if (dbType === 'mongodb') {
+            await db.collection('users').deleteOne({ _id: new db.ObjectId(userId) });
+        } 
+        // PostgreSQL (Supabase uses PostgreSQL) delete logic
+        else if (dbType === 'mysql' || dbType === 'supabase') {
+            await db.query('DELETE FROM users WHERE id = $1', [userId]);
+        } 
+        // Firebase Firestore delete logic
+        else if (dbType === 'firebase') {
+            await db.collection('users').doc(userId).delete();
         } else {
-            await db.firestore().collection('users').doc(userId).delete();  // Firebase
+            throw new Error('Unsupported database type');
         }
 
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
+        console.error('Error deleting user:', error);
         res.status(500).json({ message: 'Error deleting user', error: error.message });
     }
 }
