@@ -11,10 +11,7 @@ const connectDB = async () => {
     switch (dbType) {
       case 'mongodb':
         // MongoDB connection using Mongoose
-        await mongoose.connect(config.MONGO_URI, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-        });
+        await mongoose.connect(config.MONGO_URI);
         console.log('MongoDB connected successfully');
         break;
 
