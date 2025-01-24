@@ -12,7 +12,6 @@ const salesSchema = new mongoose.Schema({
     },
     username: { 
         type: String,
-        required: true,
         unique: true,
     }, 
     email: {
@@ -59,7 +58,7 @@ const salesSchema = new mongoose.Schema({
         required: false,
     },
     last_updated: {
-        type: Date,
+        type: String,
     },
     balance: {
         type: Number, // User's current account balance
