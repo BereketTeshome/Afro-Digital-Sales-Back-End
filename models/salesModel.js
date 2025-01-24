@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 
 const salesSchema = new mongoose.Schema({
-    fullname: { 
+    s_id: {
         type: String,
         required: true,
         unique: true,
+    },
+    fullname: { 
+        type: String,
+        required: true,
     },
     username: { 
         type: String,
@@ -25,7 +29,7 @@ const salesSchema = new mongoose.Schema({
         default: 'sales',
     },
     phone: {
-        type: String, // Phone number of the user
+        type: Number, // Phone number of the user
         required: false,
     },
     address: {
@@ -45,10 +49,17 @@ const salesSchema = new mongoose.Schema({
         type: String, // A short description or bio about the user
         required: false,
     },
+    country: {
+        type: String, 
+        required: false,
+    },
     subscription_plan: {
         type: String, // The subscription plan of the user
         enum: ['basic', 'premium', 'enterprise'], // Example plans
         required: false,
+    },
+    last_updated: {
+        type: Date,
     },
     balance: {
         type: Number, // User's current account balance
@@ -57,6 +68,7 @@ const salesSchema = new mongoose.Schema({
     dash_type: {
         type: String, // Type of dashboard the user is associated with
         required: false,
+        default: "sales_dashboard"
     },
     createdAt: {
         type: Date,

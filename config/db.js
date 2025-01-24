@@ -1,11 +1,21 @@
 const mongoose = require('mongoose');
 const mysql = require('mysql2');
-const { Client } = require('pg'); // PostgreSQL client for Supabase
 const firebaseAdmin = require('firebase-admin');
 const config = require('./config');
 
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize the Supabase client
+const supabaseUrl = process.env.SUPABASE_URL; // Example: 'https://wkhqajyiopjwwnfdykya.supabase.co'
+const supabaseKey = process.env.SUPABASE_KEY; // Your Supabase service role key or public API key
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+module.exports = supabase;
+
+
 const connectDB = async (app) => {
-  const dbType = config.DB_TYPE || 'mongodb'; // Default to Firebase if no DB_TYPE is provided
+  const dbType = config.DB_TYPE;
 
   try {
     // Set the dbType in app.locals for later use
@@ -33,16 +43,9 @@ const connectDB = async (app) => {
         break;
 
       case 'supabase':
-        const supabaseClient = new Client({
-          user: config.SUPABASE_USER,
-          host: config.SUPABASE_HOST,
-          database: config.SUPABASE_DB,
-          password: config.SUPABASE_PASSWORD,
-          port: 5432,
-        });
-        await supabaseClient.connect();
-        console.log('Supabase connected successfully');
-        app.locals.db = supabaseClient; // Store PostgreSQL client
+        // No need for 'new Client' here, just use the already initialized supabase client
+        console.log('Supabase client already initialized');
+        app.locals.db = supabase; // Store Supabase client (already initialized)
         break;
 
       case 'firebase':

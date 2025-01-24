@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const salesSettingSchema = new mongoose.Schema({
+    s_setting_id: {
+        type: String,
+        required: true,
+        unique: true,
+    },
     sales_id: {
         type: mongoose.Schema.Types.ObjectId, // Reference to sales ID
         ref: 'Sales',
