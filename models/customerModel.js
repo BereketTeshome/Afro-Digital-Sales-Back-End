@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-const vendorSchema = new mongoose.Schema({
-    v_id: {
+const customerSchema = new mongoose.Schema({
+    c_id: {
         type: String,
         required: true,
         unique: true,
@@ -22,7 +22,6 @@ const vendorSchema = new mongoose.Schema({
     },
     logo: {
         type: String,
-        required: true,
     },
     phone: {
         type: Number,
@@ -43,11 +42,11 @@ const vendorSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        default: 'vendor',
+        default: 'customer',
     },
     dash_type:{
         type: String,
-        default: 'vendor_dashboard', // different dashboard types based on role
+        default: 'customer_dashboard', // different dashboard types based on role
     },
     createdAt: {
         type: Date,
@@ -55,12 +54,12 @@ const vendorSchema = new mongoose.Schema({
     },
 });
 
-module.exports = mongoose.model('Vendor', vendorSchema);
+module.exports = mongoose.model('Customer', customerSchema);
 
 
 //  check to the post mam 
 // {
-//     "username": "bestvendor",
+//     "username": "best",
 //     "email": "vendor@example.com",
 //     "password": "securepassword123",
 //     "logo": "https://example.com/logo.png",

@@ -1,6 +1,16 @@
 const mongoose = require('mongoose');
 
 const vendorSettingSchema = new mongoose.Schema({
+    v_setting_id: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+    vendor_id: {
+        type: mongoose.Schema.Types.ObjectId, // Reference to vendor ID
+        ref: 'Vendor',
+        required: false,
+    },
     discount: {
         type: Number,
     },

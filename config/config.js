@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 module.exports = {
   // General configuration
   PORT: process.env.PORT || 5000,
@@ -16,10 +18,11 @@ module.exports = {
   SUPABASE_HOST: process.env.SUPABASE_HOST || 'your_supabase_host',
   SUPABASE_DB: process.env.SUPABASE_DB || 'your_supabase_db',
   SUPABASE_PASSWORD: process.env.SUPABASE_PASSWORD || 'your_supabase_password',
+  SUPABASE_PORT: process.env.SUPABASE_PORT || 'your_supabase_port',
 
   // Firebase configuration
   FIREBASE_DB_URL: process.env.FIREBASE_DB_URL || 'https://your-firebase-db.firebaseio.com',
 
   // DB_TYPE specifies the type of database (mongodb, mysql, supabase, firebase, etc.)
-  DB_TYPE: process.env.DB_TYPE || 'mongodb',  // Set your DB type here
+  DB_TYPE: process.env.DB_TYPE  // Set your DB type here
 };

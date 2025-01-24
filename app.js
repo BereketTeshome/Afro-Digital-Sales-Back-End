@@ -1,7 +1,8 @@
 const express = require('express');
 const connectDB = require('./config/db');
 const config = require('./config/config');
-const authRoutes = require('./routes/authRoutes');
+const vendorRoutes = require('./routes/vendorRoutes');
+const salesRoutes = require('./routes/salesRoutes');
 
 const app = express();
 
@@ -12,7 +13,8 @@ app.use(express.json()); // To parse JSON request bodies
 connectDB(app);
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth/vendor', vendorRoutes);
+app.use('/api/auth/sales', salesRoutes);
 
 // Start server
 app.listen(config.PORT, () => {
