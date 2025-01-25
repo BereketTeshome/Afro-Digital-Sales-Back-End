@@ -48,6 +48,14 @@ const customerSchema = new mongoose.Schema({
         type: String,
         default: 'customer_dashboard', // different dashboard types based on role
     },
+    lat: {
+        type: Number, // Latitude of the product's location
+        required: false,
+    },
+    long: {
+        type: Number, // Longitude of the product's location
+        required: false,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

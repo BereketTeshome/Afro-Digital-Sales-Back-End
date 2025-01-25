@@ -69,6 +69,14 @@ const salesSchema = new mongoose.Schema({
         required: false,
         default: "sales_dashboard"
     },
+    lat: {
+        type: Number, // Latitude of the product's location
+        required: false,
+    },
+    long: {
+        type: Number, // Longitude of the product's location
+        required: false,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

@@ -49,6 +49,14 @@ const vendorSchema = new mongoose.Schema({
         type: String,
         default: 'vendor_dashboard', // different dashboard types based on role
     },
+    lat: {
+        type: Number, // Latitude of the vendor's location
+        required: false,
+    },
+    long: {
+        type: Number, // Longitude of the vendor's location
+        required: false,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -58,19 +66,4 @@ const vendorSchema = new mongoose.Schema({
 module.exports = mongoose.model('Vendor', vendorSchema);
 
 
-//  check to the post mam 
-// {
-//     "username": "bestvendor",
-//     "email": "vendor@example.com",
-//     "password": "securepassword123",
-//     "logo": "https://example.com/logo.png",
-//     "phone": 1234567890,
-//     "last_updated": "2025-01-23T10:00:00Z",
-//     "address": "123 Vendor Street, Vendor City",
-//     "country": "Ethiopia",
-//     "about": "We are the best vendor providing quality products.",
-//     "role": "vendor",
-//     "dash_type": "dashboard",
-//     "createdAt": "2025-01-23T09:30:00Z"
-//   }
   

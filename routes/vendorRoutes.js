@@ -1,5 +1,5 @@
 const express = require('express');
-const { getVendors, createVendor, getVendorById, updateVendor, deleteVendor } = require('../controllers/vendorController');
+const { getNearbyVendors,getVendors, createVendor, getVendorById, updateVendor, deleteVendor } = require('../controllers/vendorController');
 
 const router = express.Router();
 
@@ -27,5 +27,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     await deleteVendor(req, res);
 });
+// Route to get nearby vendors with pagination
+router.get('/near/:mylat/:mylon/:kilometer', async (req, res) => {
+    await getNearbyVendors(req, res);
+});
+
 
 module.exports = router;

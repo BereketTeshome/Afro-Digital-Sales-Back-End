@@ -1,5 +1,5 @@
 const express = require('express');
-const { getSales, createSales, getSalesById, updateSales, deleteSales } = require('../controllers/salesController');
+const { getNearSales,getSales, createSales, getSalesById, updateSales, deleteSales } = require('../controllers/salesController');
 
 const router = express.Router();
 
@@ -27,5 +27,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     await deleteSales(req, res);
 });
+// Route to get near sales with pagination
+router.get('/near/:lat/:lon/:radius', async (req, res) => {
+    await getNearSales(req, res);
+});
+
 
 module.exports = router;

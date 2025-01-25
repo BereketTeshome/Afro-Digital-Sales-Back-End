@@ -3,34 +3,69 @@ const Customer = require('../models/customerModel');
 async function getCustomers(req, res) {
     try {
         const db = req.app.locals.db;
-        let customers;
         const dbType = req.app.locals.dbType; // Get database type (firebase, mongodb, etc.)
-        console.log("DB TYPE", dbType)
+        const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
+        const limit = parseInt(req.query.limit) || 10;  // Default to limit 10 if not provided
+        const skip = (page - 1) * limit; // Calculate the number of records to skip for pagination
+        let customers;
+
+        console.log("DB TYPE", dbType);
 
         if (dbType === 'mongodb') {
-            // MongoDB logic
-            customers = await db.collection('customers').find().toArray();
+            // MongoDB logic with pagination
+            customers = await db.collection('customers')
+                                 .find()
+                                 .skip(skip)
+                                 .limit(limit)
+                                 .toArray();
         } 
         else if (dbType === 'mysql') {
-            // MySQL logic
-            const result = await db.query('SELECT * FROM customers');
-            customers = result.rows;
+            // MySQL logic with pagination
+            const result = await db.promise().query('SELECT * FROM customers LIMIT ?, ?', [skip, limit]);
+            customers = result[0];  // Rows returned from the query
         } 
         else if (dbType === 'supabase') {
-            // Supabase logic (PostgreSQL)
-            const result = await db.query('SELECT * FROM customers');
-            customers = result.rows;
+            // Supabase (PostgreSQL) logic with pagination
+            const { data, error } = await db.from('customers').select('*').range(skip, skip + limit - 1);
+            
+            if (error) throw new Error(error.message);
+
+            customers = data;
         }
         else if (dbType === 'firebase') {
-            const snapshot = await db.collection('customers').get();
+            // Firebase logic with pagination (FireStore)
+            const snapshot = await db.collection('customers')
+                                      .offset(skip)
+                                      .limit(limit)
+                                      .get();
             customers = snapshot.docs.map(doc => doc.data());
         }
         else {
             throw new Error('Unsupported database type');
         }
 
-        res.status(200).json(customers);
+        // Get the total number of records for pagination info
+        let totalCount;
+        if (dbType === 'mongodb') {
+            totalCount = await db.collection('customers').countDocuments();
+        } else if (dbType === 'mysql' || dbType === 'supabase') {
+            const countResult = await db.query('SELECT COUNT(*) as total FROM customers');
+            totalCount = countResult[0][0].total;
+        } else if (dbType === 'firebase') {
+            totalCount = (await db.collection('customers').get()).size;
+        }
+
+        res.status(200).json({
+            data: customers,
+            pagination: {
+                page,
+                limit,
+                totalCount,
+            }
+        });
+
     } catch (error) {
+        console.error('Error fetching customers:', error);
         res.status(500).json({ message: 'Error fetching customers', error: error.message });
     }
 }

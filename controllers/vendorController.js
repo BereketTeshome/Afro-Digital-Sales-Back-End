@@ -1,42 +1,154 @@
 const Vendor = require('../models/vendorModel');
 
+// Haversine formula to calculate the distance between two lat/long points
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of Earth in kilometers
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in kilometers
+}
 
+// Get nearby vendors with pagination
+async function getNearbyVendors(req, res) {
+    try {
+        const db = req.app.locals.db;
+        const dbType = req.app.locals.dbType;
+        const { mylat, mylon, kilometer, page = 1, limit = 10 } = req.params;  // Get lat, lon, and distance from params
 
+        // Pagination
+        const skip = (page - 1) * limit;
+
+        // Fetch all vendors
+        let vendors;
+
+        if (dbType === 'mongodb') {
+            vendors = await db.collection('vendors')
+                               .skip(skip)
+                               .limit(limit)
+                               .toArray();
+        } else if (dbType === 'mysql') {
+            const result = await db.promise().query('SELECT * FROM vendors LIMIT ?, ?', [skip, limit]);
+            vendors = result[0];
+        } else if (dbType === 'supabase') {
+            const { data, error } = await db.from('vendors').select('*').range(skip, skip + limit - 1);
+            if (error) throw new Error(error.message);
+            vendors = data;
+        } else if (dbType === 'firebase') {
+            const snapshot = await db.collection('vendors')
+                                      .offset(skip)
+                                      .limit(limit)
+                                      .get();
+            vendors = snapshot.docs.map(doc => doc.data());
+        }
+
+        // Filter vendors based on proximity
+        const nearbyVendors = vendors.filter(vendor => {
+            if (!vendor.lat || !vendor.long) return false;  // Skip vendors without location data
+            const distanceToVendor = haversine(parseFloat(mylat), parseFloat(mylon), vendor.lat, vendor.long);  // Calculate distance
+            return distanceToVendor <= parseFloat(kilometer);  // Filter vendors within the specified distance
+        });
+
+        // Get total count for pagination
+        let totalCount;
+        if (dbType === 'mongodb') {
+            totalCount = await db.collection('vendors').countDocuments();
+        } else if (dbType === 'mysql' || dbType === 'supabase') {
+            const countResult = await db.query('SELECT COUNT(*) as total FROM vendors');
+            totalCount = countResult[0][0].total;
+        } else if (dbType === 'firebase') {
+            totalCount = (await db.collection('vendors').get()).size;
+        }
+
+        // Return the filtered vendors and pagination info
+        res.status(200).json({
+            data: nearbyVendors,
+            pagination: {
+                page,
+                limit,
+                totalCount,
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching nearby vendors:', error);
+        res.status(500).json({ message: 'Error fetching nearby vendors', error: error.message });
+    }
+}
 
 async function getVendors(req, res) {
     try {
         const db = req.app.locals.db;
-        let vendors;
         const dbType = req.app.locals.dbType; // Get database type (firebase, mongodb, etc.)
-        console.log("DB TYPE", dbType)
+        const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
+        const limit = parseInt(req.query.limit) || 10;  // Default to limit 10 if not provided
+        const skip = (page - 1) * limit; // Calculate the number of records to skip for pagination
+        let vendors;
+
+        console.log("DB TYPE", dbType);
 
         if (dbType === 'mongodb') {
-            // MongoDB logic
-            vendors = await db.collection('vendors').find().toArray();
+            // MongoDB logic with pagination
+            vendors = await db.collection('vendors')
+                               .find()
+                               .skip(skip)
+                               .limit(limit)
+                               .toArray();
         } 
         else if (dbType === 'mysql') {
-            // MySQL logic
-            const result = await db.query('SELECT * FROM vendors');
-            vendors = result.rows;
+            // MySQL logic with pagination
+            const result = await db.promise().query('SELECT * FROM vendors LIMIT ?, ?', [skip, limit]);
+            vendors = result[0];  // Rows returned from the query
         } 
         else if (dbType === 'supabase') {
-            // Supabase logic (PostgreSQL)
-            const result = await db.query('SELECT * FROM vendors');
-            vendors = result.rows;
+            // Supabase (PostgreSQL) logic with pagination
+            const { data, error } = await db.from('vendors').select('*').range(skip, skip + limit - 1);
+            
+            if (error) throw new Error(error.message);
+
+            vendors = data;
         }
         else if (dbType === 'firebase') {
-            const snapshot = await db.collection('vendors').get();
+            // Firebase logic with pagination (FireStore)
+            const snapshot = await db.collection('vendors')
+                                      .offset(skip)
+                                      .limit(limit)
+                                      .get();
             vendors = snapshot.docs.map(doc => doc.data());
         }
         else {
             throw new Error('Unsupported database type');
         }
 
-        res.status(200).json(vendors);
+        // Get the total number of records for pagination info
+        let totalCount;
+        if (dbType === 'mongodb') {
+            totalCount = await db.collection('vendors').countDocuments();
+        } else if (dbType === 'mysql' || dbType === 'supabase') {
+            const countResult = await db.query('SELECT COUNT(*) as total FROM vendors');
+            totalCount = countResult[0][0].total;
+        } else if (dbType === 'firebase') {
+            totalCount = (await db.collection('vendors').get()).size;
+        }
+
+        res.status(200).json({
+            data: vendors,
+            pagination: {
+                page,
+                limit,
+                totalCount,
+            }
+        });
+
     } catch (error) {
+        console.error('Error fetching vendors:', error);
         res.status(500).json({ message: 'Error fetching vendors', error: error.message });
     }
 }
+
 
 
 const createVendor = async (req, res) => {
@@ -184,4 +296,5 @@ module.exports = {
     getVendorById,
     updateVendor,
     deleteVendor,
+    getNearbyVendors
 };
