@@ -22,7 +22,7 @@ const getProducts = async (req, res) => {
             totalCount = (await db.collection('products').get()).size;  // Total count of products
         } else if (dbType === 'mongodb') {
             // MongoDB logic
-            const Product = require('../models/product'); // Assuming you have the Product model
+            const Product = require('../models/productModel'); // Assuming you have the Product model
             products = await Product.find().skip(skip).limit(limit); // Pagination logic
             totalCount = await Product.countDocuments(); // Count total products
         } else if (dbType === 'mysql') {
@@ -89,7 +89,7 @@ const createProduct = async (req, res) => {
             res.status(201).json({ message: 'Product created successfully' });
         } else if (dbType === 'mongodb') {
             // MongoDB logic
-            const Product = require('../models/product'); // Assuming you have the Product model defined
+            const Product = require('../models/productModel'); // Assuming you have the Product model defined
             const product = new Product(newProduct);
             await product.save();
             res.status(201).json({ message: 'Product created successfully', product });
@@ -152,7 +152,7 @@ const getProductById = async (req, res) => {
             }
         } else if (dbType === 'mongodb') {
             // MongoDB logic
-            const Product = require('../models/product'); // Assuming you have the Product model
+            const Product = require('../models/productModel'); // Assuming you have the Product model
             product = await Product.findById(productId); // Fetch product by ID
         } else if (dbType === 'mysql') {
             // MySQL logic
@@ -202,7 +202,7 @@ const updateProduct = async (req, res) => {
             await db.collection('products').doc(productId).update(updatedData);
         } else if (dbType === 'mongodb') {
             // MongoDB logic
-            const Product = require('../models/product'); // Assuming you have the Product model
+            const Product = require('../models/productModel'); // Assuming you have the Product model
             const result = await Product.findByIdAndUpdate(productId, updatedData, { new: true });
             if (!result) {
                 return res.status(404).json({ message: 'Product not found' });
@@ -254,7 +254,7 @@ const deleteProduct = async (req, res) => {
             await db.collection('products').doc(productId).delete();
         } else if (dbType === 'mongodb') {
             // MongoDB logic
-            const Product = require('../models/product'); // Assuming you have the Product model
+            const Product = require('../models/productModel'); // Assuming you have the Product model
             const result = await Product.findByIdAndDelete(productId);
             if (!result) {
                 return res.status(404).json({ message: 'Product not found' });
